@@ -9,6 +9,7 @@ class PostForm(forms.ModelForm):
         required=True,
         help_text='Текст поста'
     )
+
     class Meta:
         model = Post
         fields = ('text', 'group')
@@ -16,6 +17,7 @@ class PostForm(forms.ModelForm):
         help_texts = {
             'group': 'Группа поста'
         }
+
     def clean_subject(self):
         data = self.cleaned_data['text']
         if len(data) == 0:
