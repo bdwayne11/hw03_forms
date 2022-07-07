@@ -5,26 +5,24 @@ from .forms import PostForm
 from django.contrib.auth.decorators import login_required
 
 ELEMENT_QUANTITY = 10
-ELEMENT_LAST_POST = 1
+
+
+def paginator_func(posts, request):
+    paginator = Paginator(posts, ELEMENT_QUANTITY)
+    page_number = request.GET.get('page')
+    return paginator.get_page(page_number)
 
 
 def index(request):
     post_list = Post.objects.all().select_related('group')
-    paginator = Paginator(post_list, ELEMENT_QUANTITY)
-    page_number = request.GET.get('page')
-    page_obj = paginator.get_page(page_number)
-    context = {
-        'page_obj': page_obj,
-    }
-    return render(request, 'posts/index.html', context)
+    page_obj = paginator_func(post_list, request)
+    return render(request, 'posts/index.html', {'page_obj': page_obj})
 
 
 def group_posts(request, slug):
     group = get_object_or_404(Group, slug=slug)
     post_list = group.posts.all()
-    paginator = Paginator(post_list, ELEMENT_QUANTITY)
-    page_number = request.GET.get('page')
-    page_obj = paginator.get_page(page_number)
+    page_obj = paginator_func(post_list, request)
     context = {
         'group': group,
         'page_obj': page_obj,
@@ -33,14 +31,14 @@ def group_posts(request, slug):
 
 
 def profile(request, username):
-    post = get_object_or_404(User, username=username)
-    post_list = post.posts.all()
+    users_params = get_object_or_404(User, username=username)
+    post_list = users_params.posts.all()
     paginator = Paginator(post_list, ELEMENT_QUANTITY)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
     post_count = post_list.count()
     context = {
-        'post': post,
+        'users_params': users_params,
         'page_obj': page_obj,
         'post_count': post_count,
     }
@@ -49,8 +47,7 @@ def profile(request, username):
 
 def post_detail(request, post_id):
     post = get_object_or_404(Post, id=post_id)
-    user_post = Post.objects.get(id=post_id)
-    post_count = user_post.author.posts.count()
+    post_count = post.author.posts.count()
     context = {
         'post': post,
         'post_count': post_count
@@ -61,20 +58,18 @@ def post_detail(request, post_id):
 @login_required
 def post_create(request):
     name = request.user.username
-    ch_group = Group.objects.all()
     if request.method == 'POST':
-        form = PostForm(request.POST)
+        form = PostForm(request.POST or None)
         if form.is_valid():
             form = form.save(commit=False)
             form.author_id = request.user.id
             form.save()
             return redirect('posts:profile', name)
         return render(request, 'posts/create_post.html',
-                      {'form': form, 'ch_group': ch_group})
+                      {'form': form})
     form = PostForm()
     context = {
         'form': form,
-        'ch_group': ch_group
     }
     return render(request, 'posts/create_post.html', context)
 
