@@ -7,22 +7,22 @@ from django.contrib.auth.decorators import login_required
 ELEMENT_QUANTITY = 10
 
 
-def paginator_func(posts, request):
+def get_page(posts, request):
     paginator = Paginator(posts, ELEMENT_QUANTITY)
     page_number = request.GET.get('page')
     return paginator.get_page(page_number)
 
 
 def index(request):
-    post_list = Post.objects.all().select_related('group')
-    page_obj = paginator_func(post_list, request)
+    post_list = Post.objects.select_related('group')
+    page_obj = get_page(post_list, request)
     return render(request, 'posts/index.html', {'page_obj': page_obj})
 
 
 def group_posts(request, slug):
     group = get_object_or_404(Group, slug=slug)
     post_list = group.posts.all()
-    page_obj = paginator_func(post_list, request)
+    page_obj = get_page(post_list, request)
     context = {
         'group': group,
         'page_obj': page_obj,
@@ -31,26 +31,20 @@ def group_posts(request, slug):
 
 
 def profile(request, username):
-    users_params = get_object_or_404(User, username=username)
-    post_list = users_params.posts.all()
-    paginator = Paginator(post_list, ELEMENT_QUANTITY)
-    page_number = request.GET.get('page')
-    page_obj = paginator.get_page(page_number)
-    post_count = post_list.count()
+    user = get_object_or_404(User, username=username)
+    post_list = user.posts.all()
+    page_obj = get_page(post_list, request)
     context = {
-        'users_params': users_params,
+        'user': user,
         'page_obj': page_obj,
-        'post_count': post_count,
     }
     return render(request, 'posts/profile.html', context)
 
 
 def post_detail(request, post_id):
     post = get_object_or_404(Post, id=post_id)
-    post_count = post.author.posts.count()
     context = {
         'post': post,
-        'post_count': post_count
     }
     return render(request, 'posts/post_detail.html', context)
 
