@@ -31,11 +31,11 @@ def group_posts(request, slug):
 
 
 def profile(request, username):
-    user = get_object_or_404(User, username=username)
-    post_list = user.posts.all()
+    author = get_object_or_404(User, username=username)
+    post_list = author.posts.all()
     page_obj = get_page(post_list, request)
     context = {
-        'user': user,
+        'author': author,
         'page_obj': page_obj,
     }
     return render(request, 'posts/profile.html', context)
